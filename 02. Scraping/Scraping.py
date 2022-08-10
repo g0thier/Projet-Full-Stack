@@ -89,6 +89,10 @@ class QuotesSpider(scrapy.Spider):
     # Url to start your spider from 
     start_urls = df_tournage['imdb_search'].tolist()[:]
 
+    # Rotation de proxy 
+    ROTATING_PROXY_LIST_PATH = '/my/path/proxies.txt' # Path that this library uses to store list of proxies
+    NUMBER_OF_PROXIES_TO_FETCH = 5 # Controls how many proxies to use
+
     # Recherche Requête 
     def parse(self, response):
 
