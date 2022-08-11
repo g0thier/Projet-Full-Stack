@@ -89,9 +89,27 @@ class QuotesSpider(scrapy.Spider):
     # Url to start your spider from 
     start_urls = df_tournage['imdb_search'].tolist()[:]
 
+    # Delay for don't be desallow 
+    custom_settings = {
+        'AUTOTHROTTLE_ENABLED': True, # limite pour ménager les serveur 
+        'AUTOTHROTTLE_DEBUG': True, # affiche le debug
+        'DOWNLOAD_DELAY': 0.2, # temps entre les requetes 
+        'DEPTH_LIMIT': 1, # profondeur de recherche 
+    }
+
     # Rotation de proxy 
-    ROTATING_PROXY_LIST_PATH = '/my/path/proxies.txt' # Path that this library uses to store list of proxies
-    NUMBER_OF_PROXIES_TO_FETCH = 5 # Controls how many proxies to use
+    ROTATING_PROXY_LIST_PATH = path + '/proxies.txt' # Path that this library uses to store list of proxies
+    NUMBER_OF_PROXIES_TO_FETCH = 25 # Controls how many proxies to use
+
+    # paralelle
+    DOWNLOADER_MIDDLEWARES = {
+        'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+        'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 400,
+        #'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
+        #'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
+        'rotating_free_proxies.middlewares.RotatingProxyMiddleware': 610,
+        'rotating_free_proxies.middlewares.BanDetectionMiddleware': 620,
+    }
 
     # Recherche Requête 
     def parse(self, response):
