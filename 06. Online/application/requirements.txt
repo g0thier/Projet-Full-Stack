@@ -1,0 +1,11 @@
+altair
+joblib
+numpy
+pandas
+pydeck
+sklearn
+streamlit
+time 
+datetime
+re
+sentence_transformers
