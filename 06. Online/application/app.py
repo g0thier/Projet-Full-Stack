@@ -49,11 +49,7 @@ def test_set_from(film, target_name, dataset_columns):
     my_film = film
     my_film["genres"] = my_film['genre']
 
-    # Convert string Genre to list
-    my_film["genres"] = [ str(x).replace(' ', '') for x in my_film["genres"][:] ] 
-    my_film["genres"] = [ x.split(",") for x in my_film["genres"][:] ]
-
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+    modelST = SentenceTransformer('all-MiniLM-L6-v2')
 
     my_film['genre'] = ''
     my_film['themaScore'] = 0.0
@@ -64,8 +60,8 @@ def test_set_from(film, target_name, dataset_columns):
         bestScore = 0.0
         bestGenre = ''
         for genre in genres:
-            emb1 = model.encode(str(genre))
-            emb2 = model.encode(str(resume))
+            emb1 = modelST.encode(str(genre))
+            emb2 = modelST.encode(str(resume))
             cos_sim = util.cos_sim(emb1, emb2)
             result = cos_sim.tolist()[0][0]
             if result > bestScore:
@@ -86,14 +82,14 @@ def test_set_from(film, target_name, dataset_columns):
 
 
 
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def load_model():
     model = joblib.load("src/random_forest.joblib")
     return model
 
 
 
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def load_data(target_name):
     # Import Dataset
     dataset = pd.read_csv('src/dataset.csv', delimiter=',', on_bad_lines='skip')
@@ -129,7 +125,7 @@ my_imdb_score = 0.0 # init @ 0
 
 title = 'Radioactive'
 year = 2019
-parentalAdvisor = 'PG-13'
+parentalAdvisor = 'Not Rated'
 duree = 109.0
 resume = 'The incredible true story of Marie Sklodowska-Curie and her Nobel Prize-winning work that changed the world.'
 genre = ['Biography', 'Drama', 'Romance']
@@ -148,60 +144,95 @@ X_test = preprocessor.transform(X_test) # Preprocessing copieur
 my_imdb_score = model.predict(X_test)[0]
 my_imdb_score = round(my_imdb_score,1)
 
+def main():
+    st.set_page_config(page_title="🔮 IMDB Movie Score",
+                       page_icon="🔮",
+                       layout="wide")
 
-st.set_page_config(layout="wide")
-
-st.header('🔮 IMDB Movie Score')
-st.subheader('Create your movie')
-st.caption('This Machine Learning script guesses the IMDB rating of a movie from its resume, genre, duration, release date and parental guidelines')
+if __name__ == "__main__":
 
 
-with st.form("my_form", clear_on_submit=False):
-    st.write("Inside the form")
-    slider_val = st.slider("Form slider")
-    checkbox_val = st.checkbox("Form checkbox")
-    form_title = st.text_input('Movie title :', value=my_film['title'][0], 
-                               placeholder='Gone Girl, The Game, Respect... ')
+    col1, col2, col3 = st.columns(3)
 
-    form_year = st.slider('Release date :', 1895, 2022, my_film['year'][0])
-    form_parentalAdvisor = st.selectbox('TV Parental Guidelines',
-                                        ('PG-13', 'TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA'),
-                                        index= 0 )
+    st.write(
+        """
+        <style>
+        [data-testid="stMetricDelta"] svg {
+            display: none;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    with col1:
+        # st.header()
+        # st.subheader('Create your movie')
+        metric1 = st.metric(label=f"{my_film['year'][0]}", 
+                                    value= f"{my_film['title'][0]}", 
+                                    delta=f"{round(my_film['duree'][0])} min", delta_color="off")
+
+    with col2:
+        metric2 = st.metric(label="Score IMDB", value= f"{my_imdb_score}", delta="Estimation", delta_color="off")
+
+    with col3:
+        degCos = round( np.degrees(np.arccos(my_film['themaScore'][0])), 2)
+        metric3 = st.metric(label="1ˢᵗ Genre", value= f"{my_film['genre'][0]}", delta=f"{degCos}° from resume", delta_color="off")
+
+    with st.form("my_form", clear_on_submit=False):
+
+        fcol1, fcol2 = st.columns(2)
+        
+        with fcol1: 
+            form_title = st.text_input('Movie title :', value=my_film['title'][0], 
+                                placeholder='Gone Girl, The Game, Respect... ')
+
+            form_genre = st.multiselect('Genre(s) :',
+                                    ['Biography', 'Drama', 'Romance'],
+                                    my_film['genre'][0])
+
+            form_resume = st.text_area('Resume to analyze :', my_film['resume'][0])
+
+
+
+        with fcol2: 
+            form_year = st.number_input('Release date :', 1895, 2022, int(my_film['year'][0]), step=1)
+
+            form_parentalAdvisor = st.selectbox('TV Parental Guidelines :',
+                                                ('Not Rated','PG-13', 'TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA'),
+                                                index= 0 )
+
+            form_duree = st.number_input('Duration :', 1, 873, int(my_film['duree'][0]), step=1)
+                  
+            submitted = st.form_submit_button("Submit")
+        
+        if submitted:
+            my_film['title'][0] = form_title
+            my_film['year'][0] = form_year
+            my_film['parentalAdvisor'][0] = form_parentalAdvisor
+            my_film['duree'][0] = form_duree
+            my_film['resume'][0] = form_resume
+            my_film['genre'][0] = form_genre
+            # Format informations for predict
+            X_test, Y_test = test_set_from(my_film, target_name, dataset_columns)
+            X_test = preprocessor.transform(X_test) # Preprocessing copieur
+            # Run Predict
+            my_imdb_score = model.predict(X_test)[0]
+            my_imdb_score = round(my_imdb_score,1)
+
+            # Reset view ?
+            metric1.label = f"{my_film['year'][0]}"
+            metric1.value = f"{my_film['title'][0]}"
+            metric1.delta = f"{round(my_film['duree'][0])} min"
+            #
+            metric2.value = f"{my_imdb_score}"
+            #
+            degCos = round( np.degrees(np.arccos(my_film['themaScore'][0])), 2)
+            metric3.value = f"{my_film['genre'][0]}"
+            metric3.delta = f"{degCos}° from resume"
+
+    st.caption('This Machine Learning script tries to guess the IMDB rating of a movie and is main genre from its resume, genres, duration, release date and parental guidelines.')
     
-    form_duree = st.slider('Duration :', 1, 873, my_film['duree'][0])
-
-    form_resume = st.text_area('Resume to analyze :', my_film['resume'][0])
-
-    form_genre = st.multiselect('Genre(s) :',
-                                ['Biography', 'Drama', 'Romance'],
-                                my_film['genre'][0])
-
-    # Every form must have a submit button.
-    submitted = st.form_submit_button("Submit")
-    if submitted:
-        my_film['title'][0] = form_title
-        my_film['year'][0] = form_year
-        my_film['parentalAdvisor'][0] = form_parentalAdvisor
-        my_film['duree'][0] = form_duree
-        my_film['resume'][0] = form_resume
-        my_film['genre'][0] = form_genre
-        # Format informations for predict
-        X_test, Y_test = test_set_from(my_film, target_name, dataset_columns)
-        X_test = preprocessor.transform(X_test) # Preprocessing copieur
-        # Run Predict
-        my_imdb_score = model.predict(X_test)[0]
-        my_imdb_score = round(my_imdb_score,1)
-        st.write("slider", slider_val, "checkbox", checkbox_val)
-
-
-st.subheader('See your result :')
-st.dataframe(my_film)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.metric(label="Score IMDB", value= f"{my_imdb_score}", delta="Estimation", delta_color="off")
-
-with col2:
-    st.metric(label="1ᵉʳ Genre", value= f"{my_film['genre'][0]}", delta="Estimation", delta_color="off")
+    #st.subheader('See your result :')
+    #st.dataframe(my_film)
 
