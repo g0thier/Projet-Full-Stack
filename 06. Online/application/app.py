@@ -144,13 +144,15 @@ X_test = preprocessor.transform(X_test) # Preprocessing copieur
 my_imdb_score = model.predict(X_test)[0]
 my_imdb_score = round(my_imdb_score,1)
 
+
+refresh = False 
+
 def main():
     st.set_page_config(page_title="🔮 IMDB Movie Score",
                        page_icon="🔮",
                        layout="wide")
 
 if __name__ == "__main__":
-
 
     col1, col2, col3 = st.columns(3)
 
@@ -212,7 +214,7 @@ if __name__ == "__main__":
             my_film['parentalAdvisor'][0] = form_parentalAdvisor
             my_film['duree'][0] = form_duree
             my_film['resume'][0] = form_resume
-            my_film['genre'][0] = form_genre
+            my_film['genres'][0] = form_genre
             # Format informations for predict
             X_test, Y_test = test_set_from(my_film, target_name, dataset_columns)
             X_test = preprocessor.transform(X_test) # Preprocessing copieur
@@ -220,16 +222,6 @@ if __name__ == "__main__":
             my_imdb_score = model.predict(X_test)[0]
             my_imdb_score = round(my_imdb_score,1)
 
-            # Reset view ?
-            metric1.label = f"{my_film['year'][0]}"
-            metric1.value = f"{my_film['title'][0]}"
-            metric1.delta = f"{round(my_film['duree'][0])} min"
-            #
-            metric2.value = f"{my_imdb_score}"
-            #
-            degCos = round( np.degrees(np.arccos(my_film['themaScore'][0])), 2)
-            metric3.value = f"{my_film['genre'][0]}"
-            metric3.delta = f"{degCos}° from resume"
 
     st.caption('This Machine Learning script tries to guess the IMDB rating of a movie and is main genre from its resume, genres, duration, release date and parental guidelines.')
     
