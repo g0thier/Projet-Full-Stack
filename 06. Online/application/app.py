@@ -1,7 +1,10 @@
+# Keep in memory test 
+# https://discuss.streamlit.io/t/how-to-add-records-to-a-dataframe-using-python-and-streamlit/19164/6
 #¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨#
 #            import            #
 #______________________________#
 
+from turtle import title
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -78,7 +81,7 @@ def test_set_from(film, target_name, dataset_columns):
     X_test = my_film.drop(columns= [target_name])
     Y_test = my_film[:][target_name]
 
-    return X_test, Y_test
+    return X_test, Y_test, my_film
 
 
 
@@ -110,49 +113,51 @@ def load_data(target_name):
 
 
 
-#¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨#
-#       create variables       #
-#______________________________#
-
-model = load_model()
-
-target_name = 'imdbRating'
-
-dataset_columns, X_train, Y_train, preprocessor = load_data(target_name)
-
-my_imdb_score = 0.0 # init @ 0 
-
-
-title = 'Radioactive'
-year = 2019
-parentalAdvisor = 'Not Rated'
-duree = 109.0
-resume = 'The incredible true story of Marie Sklodowska-Curie and her Nobel Prize-winning work that changed the world.'
-genre = ['Biography', 'Drama', 'Romance']
-
-my_film = pd.DataFrame(columns=['title','year','parentalAdvisor','duree','resume','genre'],
-                          data=[[ title , year , parentalAdvisor , duree , resume , genre ]])
-
-
-X_test, Y_test = test_set_from(my_film, target_name, dataset_columns)
-
-X_train = preprocessor.fit_transform(X_train) # Preprocessing influenceur
-X_test = preprocessor.transform(X_test) # Preprocessing copieur
-
-
-# Run Predict
-my_imdb_score = model.predict(X_test)[0]
-my_imdb_score = round(my_imdb_score,1)
-
-
-refresh = False 
 
 def main():
     st.set_page_config(page_title="🔮 IMDB Movie Score",
                        page_icon="🔮",
                        layout="wide")
 
+
+
+
 if __name__ == "__main__":
+
+    if "df" not in st.session_state:
+        st.session_state.df = pd.DataFrame(columns=["title", 
+                                                    "year", 
+                                                    "parentalAdvisor", 
+                                                    "duree",
+                                                    "resume",
+                                                    "genre"])
+
+    if "title" not in st.session_state:
+        st.session_state.title = "Radioactive"
+
+    if "year" not in st.session_state:
+        st.session_state.year = 2019
+
+    if "parentalAdvisor" not in st.session_state:
+        st.session_state.parentalAdvisor = "Not Rated"
+
+    if "duree" not in st.session_state:
+        st.session_state.duree = 109
+
+    if "resume" not in st.session_state:
+        st.session_state.resume = "The incredible true story of Marie Sklodowska-Curie and her Nobel Prize-winning work that changed the world."
+
+    if "genres" not in st.session_state:
+        st.session_state.genres = ["Biography"]
+
+    if "genre" not in st.session_state:
+        st.session_state.genre = "Biography"
+
+    if "score" not in st.session_state:
+        st.session_state.score = 10.0
+
+    if "themaScore" not in st.session_state:
+        st.session_state.themaScore = 1.0
 
     col1, col2, col3 = st.columns(3)
 
@@ -168,63 +173,95 @@ if __name__ == "__main__":
     )
 
     with col1:
-        # st.header()
-        # st.subheader('Create your movie')
-        metric1 = st.metric(label=f"{my_film['year'][0]}", 
-                                    value= f"{my_film['title'][0]}", 
-                                    delta=f"{round(my_film['duree'][0])} min", delta_color="off")
+        st.metric(label=f"{st.session_state.year}", 
+                  value= f"{st.session_state.title}", 
+                  delta=f"{st.session_state.duree} min", 
+                  delta_color="off")
 
     with col2:
-        metric2 = st.metric(label="Score IMDB", value= f"{my_imdb_score}", delta="Estimation", delta_color="off")
+        metric2 = st.metric(label="Score IMDB", value= f"{st.session_state.score}", delta="Estimation", delta_color="off")
 
     with col3:
-        degCos = round( np.degrees(np.arccos(my_film['themaScore'][0])), 2)
-        metric3 = st.metric(label="1ˢᵗ Genre", value= f"{my_film['genre'][0]}", delta=f"{degCos}° from resume", delta_color="off")
+        degCos = round( np.degrees(np.arccos(st.session_state.themaScore)), 2)
+        metric3 = st.metric(label="1ˢᵗ Genre", value= f"{st.session_state.genre}", delta=f"{degCos}° from resume", delta_color="off")
 
-    with st.form("my_form", clear_on_submit=False):
+    with st.form(key="add form", clear_on_submit= True):
+
+        #st.subheader(" Create your movie ")
 
         fcol1, fcol2 = st.columns(2)
-        
+
         with fcol1: 
-            form_title = st.text_input('Movie title :', value=my_film['title'][0], 
-                                placeholder='Gone Girl, The Game, Respect... ')
+            st.text_input(label='🎬 Movie title :',
+                          placeholder='Gone Girl, The Game, Respect... ', 
+                          key='title')
 
-            form_genre = st.multiselect('Genre(s) :',
-                                    ['Biography', 'Drama', 'Romance'],
-                                    my_film['genre'][0])
+            st.multiselect(label='⭐️ Genre(s) :',
+                           options=['Biography', 'Drama', 'Romance'],
+                           key='genres')
 
-            form_resume = st.text_area('Resume to analyze :', my_film['resume'][0])
-
-
+            st.text_area(label='🚢 Resume :',
+                         placeholder='Describe the senario...',
+                         key='resume')
 
         with fcol2: 
-            form_year = st.number_input('Release date :', 1895, 2022, int(my_film['year'][0]), step=1)
+            st.number_input(label='🎟️ Release date :', 
+                            min_value=1895, 
+                            max_value=2022,
+                            step=1, 
+                            key='year')
 
-            form_parentalAdvisor = st.selectbox('TV Parental Guidelines :',
-                                                ('Not Rated','PG-13', 'TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA'),
-                                                index= 0 )
+            st.selectbox(label='⚡ TV Parental Guidelines :',
+                         options=('Not Rated','PG-13', 'TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA'),
+                         index= 0, 
+                         key='parentalAdvisor')
 
-            form_duree = st.number_input('Duration :', 1, 873, int(my_film['duree'][0]), step=1)
-                  
-            submitted = st.form_submit_button("Submit")
-        
-        if submitted:
-            my_film['title'][0] = form_title
-            my_film['year'][0] = form_year
-            my_film['parentalAdvisor'][0] = form_parentalAdvisor
-            my_film['duree'][0] = form_duree
-            my_film['resume'][0] = form_resume
-            my_film['genres'][0] = form_genre
-            # Format informations for predict
-            X_test, Y_test = test_set_from(my_film, target_name, dataset_columns)
-            X_test = preprocessor.transform(X_test) # Preprocessing copieur
-            # Run Predict
-            my_imdb_score = model.predict(X_test)[0]
-            my_imdb_score = round(my_imdb_score,1)
+            st.number_input(label='🐌 Duration :',
+                            min_value=1,
+                            max_value=873,
+                            step=1,
+                            key='duree')
 
+        # you can insert code for a list comprehension here to change the data (rwdta) 
+        # values into integer / float, if required
+
+            if st.form_submit_button("☔ Action ☔"):
+
+                #Create Variables 
+                model = load_model()
+                target_name = 'imdbRating'
+                dataset_columns, X_train, Y_train, preprocessor = load_data(target_name)
+
+                
+                # Input datas variables 
+                data_dict = {'title': [st.session_state.title], 
+                             'year': [st.session_state.year],
+                             'parentalAdvisor': [st.session_state.parentalAdvisor],
+                             'duree': [st.session_state.duree],
+                             'resume': [st.session_state.resume],
+                             'genre': [st.session_state.genres] }
+
+                film = pd.DataFrame(data=data_dict)
+
+
+                # Process 
+                X_test, Y_test, my_film = test_set_from(film, target_name, dataset_columns)
+
+                # Preprocessing 
+                X_train = preprocessor.fit_transform(X_train) # Preprocessing influenceur
+                X_test = preprocessor.transform(X_test) # Preprocessing copieur
+
+                # Run Predict
+                my_imdb_score = model.predict(X_test)[0]
+                st.session_state.score = round(my_imdb_score,1)
+
+                st.session_state.themaScore = my_film.themaScore[0]
+
+
+
+            
+
+    
 
     st.caption('This Machine Learning script tries to guess the IMDB rating of a movie and is main genre from its resume, genres, duration, release date and parental guidelines.')
-    
-    #st.subheader('See your result :')
-    #st.dataframe(my_film)
-
+    st.caption("Projet DemoDays Jedha by [Gauthier Rammault](https://www.linkedin.com/in/gauthier-rammault/), the guy dreams to wanna be a real Data Scientist.")
