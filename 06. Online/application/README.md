@@ -8,3 +8,9 @@
  * 4. Run PushMe.py from VSC
 
  * 5. Follow Terminal instructions.
+
+ ## Test on mac 
+
+ * 0. On terminal be in this folder : cd + drag & drop folder 
+ * 1. streamlit cache clear
+ * 2. streamlit run app.py 

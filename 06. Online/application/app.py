@@ -4,7 +4,6 @@
 #            import            #
 #______________________________#
 
-from turtle import title
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -18,7 +17,6 @@ from sklearn.preprocessing import( OneHotEncoder, StandardScaler, LabelEncoder )
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
 import joblib
-from datetime import datetime
 
 #¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨#
 #         definitions          #
@@ -96,7 +94,7 @@ def load_model():
 def load_data(target_name):
     # Import Dataset
     dataset = pd.read_csv('src/dataset.csv', delimiter=',', on_bad_lines='skip')
-    dataset = dataset.drop(columns=['title', 'director', 'resume'])
+    # dataset = dataset.drop(columns=['tconst', 'numVotes'])
     #
     # Creation columns pour trier dans le bon ordre l'input
     dataset_columns = dataset.columns.to_list()
@@ -113,9 +111,31 @@ def load_data(target_name):
 
 
 
+def from_score_to_appreciation(imdb_score):
+    appreciation = 'Sans avis'
+
+    # Excellent : 6.6879 à 10 --------- 6.7 à 10
+    # Bon : 6.0905 à 6.6879 ----------- 6.1 à 6.7
+    # Sans avis : 5.8304 à 6.0905 ----- 5.8 à 6.1
+    # Pas top : 5.4415 à 5.8304 ------- 5.4 à 5.8
+    # Navet : 0 à 5.4415 -------------- 0 à 5.4
+
+    if imdb_score >= 6.7 :
+        appreciation = 'Excellent' 
+    if ((imdb_score >= 6.1) and (imdb_score < 6.7)):
+        appreciation = 'Bon'
+
+    if ((imdb_score >= 5.4) and (imdb_score < 5.8)):
+        appreciation = 'Pas top'
+    if imdb_score < 5.4 :
+        appreciation = 'Navet'
+
+    return appreciation
+
+
 
 def main():
-    st.set_page_config(page_title="🔮 IMDB Movie Score",
+    st.set_page_config(page_title="🔮 ML Movie Score",
                        page_icon="🔮",
                        layout="wide")
 
@@ -133,57 +153,32 @@ if __name__ == "__main__":
                                                     "genre"])
 
     if "title" not in st.session_state:
-        st.session_state.title = "Radioactive"
+        st.session_state.title = "Psycho"
 
     if "year" not in st.session_state:
-        st.session_state.year = 2019
+        st.session_state.year = 1960
 
     if "parentalAdvisor" not in st.session_state:
-        st.session_state.parentalAdvisor = "Not Rated"
+        st.session_state.parentalAdvisor = "R"
 
     if "duree" not in st.session_state:
         st.session_state.duree = 109
 
     if "resume" not in st.session_state:
-        st.session_state.resume = "The incredible true story of Marie Sklodowska-Curie and her Nobel Prize-winning work that changed the world."
+        st.session_state.resume = "A Phoenix secretary embezzles $40,000 from her employer's client, goes on the run, and checks into a remote motel run by a young man under the domination of his mother."
 
     if "genres" not in st.session_state:
-        st.session_state.genres = ["Biography"]
+        st.session_state.genres = ['Horror','Thriller']
 
     if "genre" not in st.session_state:
-        st.session_state.genre = "Biography"
+        st.session_state.genre = "Horror"
 
     if "score" not in st.session_state:
-        st.session_state.score = 10.0
+        st.session_state.score = 6.4
 
     if "themaScore" not in st.session_state:
         st.session_state.themaScore = 1.0
 
-    col1, col2, col3 = st.columns(3)
-
-    st.write(
-        """
-        <style>
-        [data-testid="stMetricDelta"] svg {
-            display: none;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    with col1:
-        st.metric(label=f"{st.session_state.year}", 
-                  value= f"{st.session_state.title}", 
-                  delta=f"{st.session_state.duree} min", 
-                  delta_color="off")
-
-    with col2:
-        metric2 = st.metric(label="Score IMDB", value= f"{st.session_state.score}", delta="Estimation", delta_color="off")
-
-    with col3:
-        degCos = round( np.degrees(np.arccos(st.session_state.themaScore)), 2)
-        metric3 = st.metric(label="1ˢᵗ Genre", value= f"{st.session_state.genre}", delta=f"{degCos}° from resume", delta_color="off")
 
     with st.form(key="add form", clear_on_submit= True):
 
@@ -197,7 +192,7 @@ if __name__ == "__main__":
                           key='title')
 
             st.multiselect(label='⭐️ Genre(s) :',
-                           options=['Biography', 'Drama', 'Romance'],
+                           options=['Drama', 'Comedy', 'Documentary', 'Crime', 'Romance', 'Thriller', 'Horror', 'Adventure'],
                            key='genres')
 
             st.text_area(label='🚢 Resume :',
@@ -212,7 +207,7 @@ if __name__ == "__main__":
                             key='year')
 
             st.selectbox(label='⚡ TV Parental Guidelines :',
-                         options=('Not Rated','PG-13', 'TV-Y', 'TV-Y7', 'TV-G', 'TV-PG', 'TV-14', 'TV-MA'),
+                         options=('Not Rated', 'R', 'PG', 'Approved', 'PG-13'),
                          index= 0, 
                          key='parentalAdvisor')
 
@@ -257,6 +252,34 @@ if __name__ == "__main__":
 
                 st.session_state.themaScore = my_film.themaScore[0]
 
+
+    col1, col2, col3 = st.columns(3)
+
+    st.write(
+        """
+        <style>
+        [data-testid="stMetricDelta"] svg {
+            display: none;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    with col1:
+        st.metric(label=f"{st.session_state.year}", 
+                  value= f"{st.session_state.title}", 
+                  delta=f"{st.session_state.duree} min", 
+                  delta_color="off")
+
+    with col2:
+        scoreML = from_score_to_appreciation(st.session_state.score)
+        estimation = round( st.session_state.score, 1)
+        metric2 = st.metric(label="Score ML", value=f"{scoreML}", delta=f"Estimation : {estimation}/10", delta_color="off")
+
+    with col3:
+        degCos = round( np.degrees(np.arccos(st.session_state.themaScore)), 2)
+        metric3 = st.metric(label="1ˢᵗ Genre", value= f"{st.session_state.genre}", delta=f"{degCos}° from resume", delta_color="off")
 
 
             

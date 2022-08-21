@@ -5,8 +5,4 @@ pandas
 pydeck
 sklearn
 streamlit
-time 
-datetime
-re
 sentence_transformers
-os

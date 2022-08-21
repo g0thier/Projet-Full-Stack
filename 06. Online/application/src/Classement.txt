@@ -1,0 +1,29 @@
+# Moyenne des films : 5.8878706275296135       Y_test_pred.mean() 
+
+# Dans les très bons films au dela de 8,5
+# 5,8754 à 7,5004
+
+# Dans les films moyen de (5.8878706275296135) à 8,5
+# 4,6098 & 7,5712 
+
+# Dans les films moyen de 3 à (5.8878706275296135)
+# 4,4394 & 7,2214 
+
+# Dans les pires films en desous de 3
+# 4,5842 & 6,2987
+
+#——————————————————————
+
+#### Classification par moyenne
+
+# Excellent : 6.6879 à 10 --------- 6.7 à 10
+# Bon : 6.0905 à 6.6879 ----------- 6.1 à 6.7
+# Sans avis : 5.8304 à 6.0905 ----- 5.8 à 6.1
+# Pas top : 5.4415 à 5.8304 ------- 5.4 à 5.8
+# Navet : 0 à 5.4415 -------------- 0 à 5.4
+
+#### Classification par exclusion 
+
+# Excellent : 6,2987 et ++
+# À Voir : 5,8754 à 6,2987
+# Navet : 5,8754 et -- 
