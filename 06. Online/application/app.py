@@ -249,7 +249,7 @@ if __name__ == "__main__":
                 # Run Predict
                 my_imdb_score = model.predict(X_test)[0]
                 st.session_state.score = round(my_imdb_score,1)
-
+                st.session_state.genre = my_film.genre[0]
                 st.session_state.themaScore = my_film.themaScore[0]
 
 
